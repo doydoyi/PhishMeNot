@@ -63,6 +63,27 @@ on a user's **first Google sign-in**:
 - **Frontend enforcement:** `ProtectedRoute roles={[...]}` sends users without the right role to
   a 403 page.
 
+## Increment 1 submission checklist
+
+Status: **complete**. Git tag: `increment-1`. Every requirement below is implemented in this commit.
+
+| Requirement | Where it is implemented |
+|---|---|
+| Account creation (Google sign-in), field validation | `backend/.../auth/UserAccountService.java`, `backend/.../auth/GoogleProfile.java` |
+| No duplicate accounts | Unique keys in `backend/.../user/User.java` + checks in `UserAccountService.java` |
+| Stored in MySQL | `backend/.../user/User.java`, `backend/.../user/UserRepository.java`, `application.properties` |
+| No password storage (SRS FR-022, NFR-005) | Google verifies credentials; `users` table has no password column |
+| Role assignment (USER / ADMIN) | `backend/.../user/Role.java`, `UserAccountService.java`, `ADMIN_EMAILS` |
+| Login interface + error messages | `frontend/src/pages/LoginPage.jsx`, `backend/.../auth/LoginFailureHandler.java` |
+| Secure sessions, CSRF, logout | `backend/.../config/SecurityConfig.java`, `frontend/src/api.js`, `frontend/src/auth/AuthContext.jsx` |
+| Protected pages and endpoints | `SecurityConfig.java` (401/403), `frontend/src/components/ProtectedRoute.jsx` |
+| Role-based redirect after login | `backend/.../auth/LoginSuccessHandler.java` |
+| Role-based dashboards + navigation | `frontend/src/pages/UserDashboard.jsx`, `AdminDashboard.jsx`, `AdminUsers.jsx`, `frontend/src/components/Layout.jsx` |
+| Backend RBAC | `SecurityConfig.java` URL rules + `@PreAuthorize` in `backend/.../admin/AdminService.java` |
+| Tests | `backend/src/test/java/...` (17 tests: registration, duplicates, validation, 401/403, logout) |
+
+`backend/...` = `backend/src/main/java/edu/cit/alvarado/phishmenot`.
+
 ## API
 
 | Method | Path                               | Access        | Description                                  |
