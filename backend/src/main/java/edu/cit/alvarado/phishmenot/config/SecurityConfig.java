@@ -18,6 +18,9 @@ import org.springframework.http.MediaType;
 import org.springframework.security.config.annotation.method.configuration.EnableMethodSecurity;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity;
+import org.springframework.security.oauth2.client.registration.ClientRegistrationRepository;
+import org.springframework.security.oauth2.client.web.DefaultOAuth2AuthorizationRequestResolver;
+import org.springframework.security.oauth2.client.web.OAuth2AuthorizationRequestResolver;
 import org.springframework.security.web.SecurityFilterChain;
 import org.springframework.security.web.authentication.logout.HttpStatusReturningLogoutSuccessHandler;
 import org.springframework.security.web.authentication.www.BasicAuthenticationFilter;
@@ -56,7 +59,8 @@ public class SecurityConfig {
     SecurityFilterChain securityFilterChain(HttpSecurity http,
             PhishMeNotOidcUserService oidcUserService,
             LoginSuccessHandler successHandler,
-            LoginFailureHandler failureHandler) throws Exception {
+            LoginFailureHandler failureHandler,
+            ClientRegistrationRepository clientRegistrationRepository) throws Exception {
 
         http
             .cors(cors -> {})
@@ -72,6 +76,8 @@ public class SecurityConfig {
                     .requestMatchers("/api/**").authenticated()
                     .anyRequest().denyAll())
             .oauth2Login(oauth -> oauth
+                    .authorizationEndpoint(endpoint -> endpoint
+                            .authorizationRequestResolver(accountChooserResolver(clientRegistrationRepository)))
                     .userInfoEndpoint(userInfo -> userInfo.oidcUserService(oidcUserService))
                     .successHandler(successHandler)
                     .failureHandler(failureHandler))
@@ -91,6 +97,19 @@ public class SecurityConfig {
                                     "You do not have permission to access this resource.", request)));
 
         return http.build();
+    }
+
+    /**
+     * Adds {@code prompt=select_account} so Google always shows its account chooser. Without it, a browser
+     * that is still signed in to Google is logged straight back into the same account after a PhishMeNot
+     * sign-out, and the user cannot switch accounts.
+     */
+    private static OAuth2AuthorizationRequestResolver accountChooserResolver(ClientRegistrationRepository repository) {
+        DefaultOAuth2AuthorizationRequestResolver resolver =
+                new DefaultOAuth2AuthorizationRequestResolver(repository, "/oauth2/authorization");
+        resolver.setAuthorizationRequestCustomizer(request ->
+                request.additionalParameters(params -> params.put("prompt", "select_account")));
+        return resolver;
     }
 
     @Bean

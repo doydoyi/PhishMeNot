@@ -76,7 +76,9 @@ class SecurityIntegrationTest {
         mvc.perform(get("/oauth2/authorization/google"))
                 .andExpect(status().is3xxRedirection())
                 .andExpect(header().string("Location",
-                        org.hamcrest.Matchers.startsWith("https://accounts.google.com/o/oauth2/v2/auth")));
+                        org.hamcrest.Matchers.allOf(
+                                org.hamcrest.Matchers.startsWith("https://accounts.google.com/o/oauth2/v2/auth"),
+                                org.hamcrest.Matchers.containsString("prompt=select_account"))));
     }
 
     @Test
