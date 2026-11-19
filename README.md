@@ -32,10 +32,13 @@ on a user's **first Google sign-in**:
   secrets are the OAuth client secret and DB password, and both are read from environment
   variables (NFR-007).
 - **Role assignment:** new accounts get the `USER` role (General User). Administrators get `ADMIN`
-  directly in the database (FR-046), or through the optional `ADMIN_EMAILS` bootstrap setting.
+  directly in the database (FR-046), or through the optional `ADMIN_EMAILS` setting (applied at
+  sign-in, so it also promotes an account that already exists).
 
 ### 2. Login and logout
-- The login page has a **Sign in with Google** button (`/oauth2/authorization/google`).
+- The login page has a **Sign in with Google** button (`/oauth2/authorization/google`). Google's
+  account chooser is always shown (`prompt=select_account`), so after signing out you can sign in
+  with a different Google account.
 - Spring Security runs the OAuth 2.0 authorization-code flow and checks the ID token.
 - **Error messages** cover a cancelled sign-in, an unverified email, missing profile data, an email
   already linked to another account, and generic failures (`?error=<code>` on `/login`).
@@ -151,7 +154,7 @@ In IntelliJ IDEA you can put the same variables in the run configuration's *Envi
 | `DB_USERNAME`          | `root`                                             | MySQL user                                 |
 | `DB_PASSWORD`          | empty                                              | MySQL password                             |
 | `FRONTEND_URL`         | `http://localhost:5173`                            | Where to redirect after login; CORS origin |
-| `ADMIN_EMAILS`         | empty                                              | Comma-separated emails created as ADMIN    |
+| `ADMIN_EMAILS`         | empty                                              | Comma-separated emails that get ADMIN at sign-in |
 | `COOKIE_SECURE`        | `false`                                            | Set `true` when served over HTTPS          |
 | `PORT`                 | `8080`                                             | Backend port                               |
 
@@ -165,8 +168,8 @@ Open http://localhost:5173 and click **Sign in with Google**. In development, Vi
 to the backend (`VITE_BACKEND_URL`, default `http://localhost:8080`).
 
 ### 5. Make an existing account an Administrator
-Either list the email in `ADMIN_EMAILS` **before** that user's first sign-in, or update the role in
-MySQL and sign in again:
+Either add the email to `ADMIN_EMAILS`, restart the backend, and sign in again, or update the role
+in MySQL and sign in again:
 
 ```sql
 UPDATE phishmenot.users SET role = 'ADMIN' WHERE email = 'your.admin.email@gmail.com';

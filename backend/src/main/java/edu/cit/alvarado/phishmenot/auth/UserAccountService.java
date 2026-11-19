@@ -57,6 +57,10 @@ public class UserAccountService {
             existing.setName(profile.name());
             existing.setProfilePictureUrl(profile.pictureUrl());
             existing.setLastLoginAt(now);
+            if (!existing.isAdmin() && appProperties.isBootstrapAdmin(profile.email())) {
+                existing.setRole(Role.ADMIN);
+                log.info("Promoted account id={} to ADMIN (listed in app.admin-emails)", existing.getUserId());
+            }
             return existing;
         }
 

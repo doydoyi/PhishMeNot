@@ -93,4 +93,20 @@ class UserAccountServiceTest {
         assertThat(admin.getRole()).isEqualTo(Role.ADMIN);
         assertThat(admin.isAdmin()).isTrue();
     }
+
+    @Test
+    void existingUserListedAsAdminIsPromotedOnNextSignIn() {
+        // boss@example.com is in app.admin-emails; simulate an account created before it was listed
+        User user = service.registerOrLogin(profile("g-late", "late@example.com"));
+        assertThat(user.getRole()).isEqualTo(Role.USER);
+
+        User again = service.registerOrLogin(new GoogleProfile("g-boss", "boss@example.com", true, "Boss", null));
+        assertThat(again.getRole()).isEqualTo(Role.ADMIN);
+
+        userRepository.deleteAll();
+        User plain = userRepository.saveAndFlush(new User("g-boss", "boss@example.com", "Boss", null, Role.USER));
+        User promoted = service.registerOrLogin(new GoogleProfile("g-boss", "boss@example.com", true, "Boss", null));
+        assertThat(promoted.getUserId()).isEqualTo(plain.getUserId());
+        assertThat(promoted.getRole()).isEqualTo(Role.ADMIN);
+    }
 }

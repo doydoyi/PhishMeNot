@@ -9,8 +9,8 @@ import org.springframework.boot.context.properties.ConfigurationProperties;
  * Application settings bound from {@code app.*} properties (set through environment variables).
  *
  * @param frontendUrl  base URL of the React frontend; used for post-login redirects and CORS
- * @param adminEmails  optional list of Google e-mail addresses that receive the ADMIN role when their
- *                     account is first created (FR-046: roles are otherwise changed directly in the database)
+ * @param adminEmails  optional list of Google e-mail addresses that receive the ADMIN role when they sign in
+ *                     (new or existing account). FR-046: roles are otherwise changed directly in the database.
  */
 @ConfigurationProperties(prefix = "app")
 public record AppProperties(String frontendUrl, List<String> adminEmails) {
