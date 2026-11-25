@@ -10,10 +10,13 @@ public record UserDto(
         String profilePictureUrl,
         Role role,
         LocalDateTime createdAt,
-        LocalDateTime lastLoginAt) {
+        LocalDateTime lastLoginAt,
+        boolean hasPassword,
+        boolean googleLinked) {
 
     public static UserDto from(User user) {
         return new UserDto(user.getUserId(), user.getName(), user.getEmail(), user.getProfilePictureUrl(),
-                user.getRole(), user.getCreatedAt(), user.getLastLoginAt());
+                user.getRole(), user.getCreatedAt(), user.getLastLoginAt(),
+                user.hasPassword(), user.getGoogleId() != null);
     }
 }

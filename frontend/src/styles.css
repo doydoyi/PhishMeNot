@@ -96,3 +96,29 @@ th { color: var(--muted); font-weight: 600; }
 
 .center-page { min-height: 100vh; display: grid; place-content: center; text-align: center; gap: .5rem; padding: 1rem; }
 .center-page h1 { font-size: 3rem; }
+
+/* ---- Forms (Increment 2) ---- */
+.form { display: flex; flex-direction: column; gap: .9rem; margin-top: 1rem; text-align: left; max-width: 480px; }
+.login-card .form { max-width: none; }
+.field { display: flex; flex-direction: column; gap: .3rem; }
+.field label { font-weight: 600; font-size: .9rem; }
+.field input {
+  padding: .6rem .75rem; border: 1px solid var(--border); border-radius: 8px; font-size: 1rem; background: #fff; color: var(--text);
+}
+.field input:focus { outline: 2px solid var(--primary); outline-offset: 1px; border-color: var(--primary); }
+.field input[aria-invalid="true"] { border-color: var(--error-ink); }
+.field input:disabled { background: var(--bg); color: var(--muted); }
+.field-hint { font-size: .8rem; color: var(--muted); }
+.field-error { font-size: .85rem; color: var(--error-ink); }
+.form-row-end { display: flex; justify-content: flex-end; font-size: .9rem; margin-top: -.4rem; }
+.btn-block { width: 100%; padding: .7rem 1rem; font-weight: 600; }
+.divider { display: flex; align-items: center; gap: .75rem; color: var(--muted); font-size: .85rem; margin: 1.25rem 0 0; }
+.divider::before, .divider::after { content: ""; flex: 1; border-top: 1px solid var(--border); }
+.login-card .divider + .btn-google { margin-top: 1rem; }
+.card-title { font-size: 1.2rem; margin-top: 1rem; }
+.alert-success { background: #e6f4ea; color: #1e6b34; }
+.left { text-align: left; }
+.section-title { margin-top: 1.25rem; font-size: 1.05rem; }
+.details { display: grid; grid-template-columns: max-content 1fr; gap: .4rem 1rem; margin: 1rem 0 0; font-size: .92rem; }
+.details dt { color: var(--muted); }
+.details dd { margin: 0; }

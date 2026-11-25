@@ -49,7 +49,8 @@ class UserAccountServiceTest {
                 new GoogleProfile("g-100", "juan@example.com", true, "Juan D. Cruz", null));
 
         assertThat(again.getUserId()).isEqualTo(first.getUserId());
-        assertThat(again.getName()).isEqualTo("Juan D. Cruz");
+        // the name is only seeded from Google; later changes come from the Profile page
+        assertThat(again.getName()).isEqualTo("Juan Dela Cruz");
         assertThat(userRepository.count()).isEqualTo(1);
     }
 

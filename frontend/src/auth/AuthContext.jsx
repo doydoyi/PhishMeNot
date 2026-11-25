@@ -29,11 +29,18 @@ export function AuthProvider({ children }) {
     }
   }, []);
 
+  /** Email + password sign-in; returns the signed-in user. */
+  const loginWithPassword = useCallback(async (email, password) => {
+    const signedIn = await api('/api/auth/login', { method: 'POST', body: { email, password } });
+    setUser(signedIn);
+    return signedIn;
+  }, []);
+
   /** Called when the API says the session is gone (401). */
   const sessionExpired = useCallback(() => setUser(null), []);
 
   return (
-    <AuthContext.Provider value={{ user, loading, refresh, logout, sessionExpired }}>
+    <AuthContext.Provider value={{ user, setUser, loading, refresh, logout, sessionExpired, loginWithPassword }}>
       {children}
     </AuthContext.Provider>
   );

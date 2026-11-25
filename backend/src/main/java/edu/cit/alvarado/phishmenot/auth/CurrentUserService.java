@@ -1,6 +1,7 @@
 package edu.cit.alvarado.phishmenot.auth;
 
 import org.springframework.security.core.Authentication;
+import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.security.oauth2.core.user.OAuth2User;
 import org.springframework.stereotype.Service;
 
@@ -19,10 +20,17 @@ public class CurrentUserService {
     }
 
     public User require(Authentication authentication) {
-        if (authentication == null || !(authentication.getPrincipal() instanceof OAuth2User principal)) {
+        if (authentication == null) {
             throw new UnauthenticatedException();
         }
-        return userRepository.findByGoogleId(principal.getName())
-                .orElseThrow(UnauthenticatedException::new);
+        // Google sessions are keyed by the Google subject id, email/password sessions by email.
+        Object principal = authentication.getPrincipal();
+        if (principal instanceof OAuth2User google) {
+            return userRepository.findByGoogleId(google.getName()).orElseThrow(UnauthenticatedException::new);
+        }
+        if (principal instanceof UserDetails local) {
+            return userRepository.findByEmailIgnoreCase(local.getUsername()).orElseThrow(UnauthenticatedException::new);
+        }
+        throw new UnauthenticatedException();
     }
 }

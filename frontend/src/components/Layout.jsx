@@ -2,11 +2,15 @@ import { NavLink, Outlet, useNavigate } from 'react-router-dom';
 import { useAuth } from '../auth/AuthContext.jsx';
 import Avatar from './Avatar.jsx';
 
-const USER_LINKS = [{ to: '/dashboard', label: 'Dashboard' }];
+const USER_LINKS = [
+  { to: '/dashboard', label: 'Dashboard' },
+  { to: '/profile', label: 'Profile' },
+];
 const ADMIN_LINKS = [
   { to: '/admin', label: 'Admin Dashboard', end: true },
   { to: '/admin/users', label: 'Users' },
   { to: '/dashboard', label: 'My Account' },
+  { to: '/profile', label: 'Profile' },
 ];
 
 export default function Layout() {
