@@ -1,5 +1,9 @@
 package edu.cit.alvarado.phishmenot.common;
 
+import java.time.Instant;
+import java.util.LinkedHashMap;
+import java.util.Map;
+
 import jakarta.servlet.http.HttpServletRequest;
 
 import org.slf4j.Logger;
@@ -8,6 +12,8 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.AccessDeniedException;
 import org.springframework.security.authorization.AuthorizationDeniedException;
+import org.springframework.http.converter.HttpMessageNotReadableException;
+import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
 import org.springframework.web.method.annotation.MethodArgumentTypeMismatchException;
@@ -32,7 +38,22 @@ public class GlobalExceptionHandler {
         return error(HttpStatus.FORBIDDEN, "You do not have permission to perform this action.", request);
     }
 
-    @ExceptionHandler({IllegalArgumentException.class, MethodArgumentTypeMismatchException.class})
+    @ExceptionHandler(ApiException.class)
+    public ResponseEntity<ApiError> api(ApiException e, HttpServletRequest request) {
+        return error(e.getStatus(), e.getMessage(), request);
+    }
+
+    @ExceptionHandler(MethodArgumentNotValidException.class)
+    public ResponseEntity<ApiError> invalid(MethodArgumentNotValidException e, HttpServletRequest request) {
+        Map<String, String> fields = new LinkedHashMap<>();
+        e.getBindingResult().getFieldErrors().forEach(f -> fields.putIfAbsent(f.getField(), f.getDefaultMessage()));
+        HttpStatus status = HttpStatus.BAD_REQUEST;
+        return ResponseEntity.status(status).body(new ApiError(status.value(), status.getReasonPhrase(),
+                "Please correct the highlighted fields.", request.getRequestURI(), Instant.now(), fields));
+    }
+
+    @ExceptionHandler({IllegalArgumentException.class, MethodArgumentTypeMismatchException.class,
+            HttpMessageNotReadableException.class})
     public ResponseEntity<ApiError> badRequest(Exception e, HttpServletRequest request) {
         return error(HttpStatus.BAD_REQUEST, "The request was not valid.", request);
     }

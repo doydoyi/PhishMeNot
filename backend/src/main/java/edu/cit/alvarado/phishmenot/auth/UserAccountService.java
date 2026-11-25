@@ -54,8 +54,10 @@ public class UserAccountService {
         if (existing != null) {
             ensureEmailNotTakenByAnotherAccount(profile.email(), existing.getUserId());
             existing.setEmail(profile.email());
-            existing.setName(profile.name());
-            existing.setProfilePictureUrl(profile.pictureUrl());
+            // name and picture are only seeded from Google; afterwards the user edits them on the Profile page
+            if (existing.getProfilePictureUrl() == null) {
+                existing.setProfilePictureUrl(profile.pictureUrl());
+            }
             existing.setLastLoginAt(now);
             if (!existing.isAdmin() && appProperties.isBootstrapAdmin(profile.email())) {
                 existing.setRole(Role.ADMIN);
@@ -102,7 +104,7 @@ public class UserAccountService {
                 .filter(other -> !other.getUserId().equals(ownUserId))
                 .ifPresent(other -> {
                     throw new AccountRegistrationException(AccountRegistrationException.ACCOUNT_CONFLICT,
-                            "This email address is already linked to a different account");
+                            "This email address is already registered to a different account");
                 });
     }
 }

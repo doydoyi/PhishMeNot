@@ -17,8 +17,9 @@ import org.hibernate.annotations.JdbcTypeCode;
 import org.hibernate.type.SqlTypes;
 
 /**
- * USERS table from the SRS ERD (Figure 1). Accounts are created from a verified Google identity,
- * so no password column exists (FR-022, NFR-005).
+ * USERS table from the SRS ERD (Figure 1). An account signs in with Google (google_id set), with an
+ * email and password (password_hash set, BCrypt), or both (a Google user who later sets a password).
+ * The plain password is never stored.
  */
 @Entity
 @Table(name = "users", uniqueConstraints = {
@@ -32,7 +33,7 @@ public class User {
     @Column(name = "user_id")
     private Long userId;
 
-    @Column(name = "google_id", nullable = false, length = 64)
+    @Column(name = "google_id", length = 64)
     private String googleId;
 
     @Column(name = "email", nullable = false, length = 255)
@@ -43,6 +44,10 @@ public class User {
 
     @Column(name = "profile_picture_url", length = 500)
     private String profilePictureUrl;
+
+    /** BCrypt hash; null for Google-only accounts. */
+    @Column(name = "password_hash", length = 100)
+    private String passwordHash;
 
     @Enumerated(EnumType.STRING)
     @JdbcTypeCode(SqlTypes.VARCHAR) // VARCHAR(10) as in the ERD, not a MySQL ENUM
@@ -87,6 +92,10 @@ public class User {
     public Role getRole() { return role; }
     public LocalDateTime getCreatedAt() { return createdAt; }
     public LocalDateTime getLastLoginAt() { return lastLoginAt; }
+    public String getPasswordHash() { return passwordHash; }
+    public boolean hasPassword() { return passwordHash != null; }
+
+    public void setPasswordHash(String passwordHash) { this.passwordHash = passwordHash; }
 
     public void setName(String name) { this.name = name; }
     public void setEmail(String email) { this.email = email; }

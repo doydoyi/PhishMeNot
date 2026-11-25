@@ -15,7 +15,13 @@ import org.springframework.context.annotation.Configuration;
 import org.springframework.http.HttpMethod;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
+import org.springframework.security.authentication.AuthenticationManager;
+import org.springframework.security.authentication.ProviderManager;
+import org.springframework.security.authentication.dao.DaoAuthenticationProvider;
 import org.springframework.security.config.annotation.method.configuration.EnableMethodSecurity;
+import org.springframework.security.core.userdetails.UserDetailsService;
+import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
+import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity;
 import org.springframework.security.oauth2.client.registration.ClientRegistrationRepository;
@@ -71,6 +77,8 @@ public class SecurityConfig {
             .authorizeHttpRequests(auth -> auth
                     .requestMatchers("/oauth2/**", "/login/oauth2/**", "/error").permitAll()
                     .requestMatchers(HttpMethod.GET, "/api/health").permitAll()
+                    .requestMatchers(HttpMethod.POST, "/api/auth/register", "/api/auth/login",
+                            "/api/auth/forgot-password", "/api/auth/reset-password").permitAll()
                     .requestMatchers("/api/admin/**").hasRole("ADMIN")
                     .requestMatchers("/api/user/**").hasAnyRole("USER", "ADMIN")
                     .requestMatchers("/api/**").authenticated()
@@ -110,6 +118,20 @@ public class SecurityConfig {
         resolver.setAuthorizationRequestCustomizer(request ->
                 request.additionalParameters(params -> params.put("prompt", "select_account")));
         return resolver;
+    }
+
+    /** BCrypt with a per-password random salt (Increment 2: passwords are hashed before storage). */
+    @Bean
+    PasswordEncoder passwordEncoder() {
+        return new BCryptPasswordEncoder();
+    }
+
+    /** Checks email + password logins against the hashes in the users table. */
+    @Bean
+    AuthenticationManager authenticationManager(UserDetailsService userDetailsService, PasswordEncoder passwordEncoder) {
+        DaoAuthenticationProvider provider = new DaoAuthenticationProvider(passwordEncoder);
+        provider.setUserDetailsService(userDetailsService);
+        return new ProviderManager(provider);
     }
 
     @Bean
