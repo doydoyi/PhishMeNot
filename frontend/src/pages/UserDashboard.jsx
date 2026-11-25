@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react';
+import { Link } from 'react-router-dom';
 import { api } from '../api.js';
 import { useAuth } from '../auth/AuthContext.jsx';
 import Avatar from '../components/Avatar.jsx';
@@ -47,8 +48,10 @@ export default function UserDashboard() {
         </div>
         <div className="card stat">
           <span className="stat-label">Sign-in method</span>
-          <span className="stat-value small">Google account</span>
-          <span className="muted">No password stored by PhishMeNot</span>
+          <span className="stat-value small">
+            {[account.googleLinked && 'Google account', account.hasPassword && 'Email & password'].filter(Boolean).join(' + ')}
+          </span>
+          <span className="muted">Manage it on your <Link to="/profile">Profile</Link></span>
         </div>
       </div>
     </section>

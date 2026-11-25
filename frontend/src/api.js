@@ -6,9 +6,10 @@ export const BACKEND_URL = import.meta.env.VITE_BACKEND_URL || 'http://localhost
 export const GOOGLE_LOGIN_URL = `${BACKEND_URL}/oauth2/authorization/google`;
 
 export class ApiError extends Error {
-  constructor(status, message) {
+  constructor(status, message, fieldErrors = {}) {
     super(message);
     this.status = status;
+    this.fieldErrors = fieldErrors;
   }
 }
 
@@ -47,7 +48,7 @@ export async function api(path, { method = 'GET', body } = {}) {
   if (response.status === 204) return null;
   const data = await response.json().catch(() => null);
   if (!response.ok) {
-    throw new ApiError(response.status, data?.message || 'Something went wrong. Please try again.');
+    throw new ApiError(response.status, data?.message || 'Something went wrong. Please try again.', data?.fieldErrors || {});
   }
   return data;
 }
