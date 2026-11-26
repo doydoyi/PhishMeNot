@@ -1,12 +1,8 @@
 package edu.cit.alvarado.phishmenot.auth;
 
-import java.nio.charset.StandardCharsets;
-import java.security.MessageDigest;
-import java.security.NoSuchAlgorithmException;
 import java.security.SecureRandom;
 import java.time.LocalDateTime;
 import java.util.Base64;
-import java.util.HexFormat;
 import java.util.Locale;
 
 import org.slf4j.Logger;
@@ -18,6 +14,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import edu.cit.alvarado.phishmenot.common.ApiException;
+import static edu.cit.alvarado.phishmenot.common.Hashes.sha256;
 import edu.cit.alvarado.phishmenot.config.AppProperties;
 import edu.cit.alvarado.phishmenot.user.Role;
 import edu.cit.alvarado.phishmenot.user.User;
@@ -127,14 +124,5 @@ public class LocalAuthService {
         byte[] bytes = new byte[32];
         random.nextBytes(bytes);
         return Base64.getUrlEncoder().withoutPadding().encodeToString(bytes);
-    }
-
-    static String sha256(String value) {
-        try {
-            return HexFormat.of().formatHex(
-                    MessageDigest.getInstance("SHA-256").digest(value.getBytes(StandardCharsets.UTF_8)));
-        } catch (NoSuchAlgorithmException e) {
-            throw new IllegalStateException(e);
-        }
     }
 }
