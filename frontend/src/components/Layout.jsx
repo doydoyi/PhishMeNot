@@ -4,11 +4,19 @@ import Avatar from './Avatar.jsx';
 
 const USER_LINKS = [
   { to: '/dashboard', label: 'Dashboard' },
+  { to: '/check', label: 'Check a Link' },
+  { to: '/history', label: 'History' },
+  { to: '/report', label: 'Report a Link' },
+  { to: '/scam-links', label: 'Scam Links' },
   { to: '/profile', label: 'Profile' },
 ];
 const ADMIN_LINKS = [
   { to: '/admin', label: 'Admin Dashboard', end: true },
+  { to: '/admin/reports', label: 'Review Reports' },
   { to: '/admin/users', label: 'Users' },
+  { to: '/check', label: 'Check a Link' },
+  { to: '/history', label: 'History' },
+  { to: '/scam-links', label: 'Scam Links' },
   { to: '/dashboard', label: 'My Account' },
   { to: '/profile', label: 'Profile' },
 ];

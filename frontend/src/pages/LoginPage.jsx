@@ -97,6 +97,7 @@ export default function LoginPage() {
       <p className="fine-print">
         New here? <Link to="/register">Create an account</Link> with your email, or sign in with Google.
       </p>
+      <p className="fine-print"><Link to="/scam-links">View the list of reported scam links</Link> without signing in.</p>
     </AuthCard>
   );
 }

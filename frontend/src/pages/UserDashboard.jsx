@@ -25,6 +25,18 @@ export default function UserDashboard() {
       <h2>Welcome, {account.name.split(' ')[0]}!</h2>
       <p className="muted">Here is your PhishMeNot account.</p>
 
+      <div className="card cta-card">
+        <div>
+          <h3>Got a suspicious link?</h3>
+          <p className="muted">Check it before you open it. It takes one paste.</p>
+        </div>
+        <div className="actions">
+          <Link className="btn" to="/check">Check a link</Link>
+          <Link className="btn btn-outline" to="/history">My history</Link>
+          <Link className="btn btn-outline" to="/scam-links">Reported scam links</Link>
+        </div>
+      </div>
+
       <div className="card profile-card">
         <Avatar user={account} size={72} />
         <div>

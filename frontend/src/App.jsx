@@ -12,6 +12,12 @@ import RegisterPage from './pages/RegisterPage.jsx';
 import ForgotPasswordPage from './pages/ForgotPasswordPage.jsx';
 import ResetPasswordPage from './pages/ResetPasswordPage.jsx';
 import ProfilePage from './pages/ProfilePage.jsx';
+import GuestLayout from './components/GuestLayout.jsx';
+import CheckLinkPage from './pages/CheckLinkPage.jsx';
+import HistoryPage from './pages/HistoryPage.jsx';
+import ReportPage from './pages/ReportPage.jsx';
+import PublicReportsPage from './pages/PublicReportsPage.jsx';
+import AdminReportsPage from './pages/AdminReportsPage.jsx';
 
 function HomeRedirect() {
   const { user, loading } = useAuth();
@@ -29,11 +35,19 @@ export default function App() {
       <Route path="/reset-password" element={<ResetPasswordPage />} />
       <Route path="/forbidden" element={<ForbiddenPage />} />
 
+      {/* Public list of approved scam reports: open to guests (FR-032) */}
+      <Route element={<GuestLayout />}>
+        <Route path="/scam-links" element={<PublicReportsPage />} />
+      </Route>
+
       {/* General User area (Administrators inherit General User use cases) */}
       <Route element={<ProtectedRoute roles={['USER', 'ADMIN']} />}>
         <Route element={<Layout />}>
           <Route path="/dashboard" element={<UserDashboard />} />
           <Route path="/profile" element={<ProfilePage />} />
+          <Route path="/check" element={<CheckLinkPage />} />
+          <Route path="/history" element={<HistoryPage />} />
+          <Route path="/report" element={<ReportPage />} />
         </Route>
       </Route>
 
@@ -42,6 +56,7 @@ export default function App() {
         <Route element={<Layout />}>
           <Route path="/admin" element={<AdminDashboard />} />
           <Route path="/admin/users" element={<AdminUsers />} />
+          <Route path="/admin/reports" element={<AdminReportsPage />} />
         </Route>
       </Route>
 
