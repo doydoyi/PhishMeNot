@@ -76,7 +76,7 @@ public class SecurityConfig {
             .addFilterAfter(new CsrfCookieFilter(), BasicAuthenticationFilter.class)
             .authorizeHttpRequests(auth -> auth
                     .requestMatchers("/oauth2/**", "/login/oauth2/**", "/error").permitAll()
-                    .requestMatchers(HttpMethod.GET, "/api/health").permitAll()
+                    .requestMatchers(HttpMethod.GET, "/api/health", "/api/reports/public").permitAll()
                     .requestMatchers(HttpMethod.POST, "/api/auth/register", "/api/auth/login",
                             "/api/auth/forgot-password", "/api/auth/reset-password").permitAll()
                     .requestMatchers("/api/admin/**").hasRole("ADMIN")
