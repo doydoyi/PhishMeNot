@@ -8,6 +8,9 @@ PhishMeNot is a web-based phishing link checker. This repository currently conta
   role-based dashboards for the two roles in the SRS (General User and Administrator).
 - **Increment 2 – User Profile and Password Management:** email + password accounts alongside Google,
   profile management, change password, and forgot/reset password by email.
+- **Increment 3 – Core System Features:** link verification against VirusTotal and Google Safe
+  Browsing (Safe / Suspicious / Malicious), verification history, scam link reporting with a public
+  list, and administrator review, re-check and statistics.
 
 | Layer    | Technology                                                                   |
 |----------|------------------------------------------------------------------------------|
@@ -16,6 +19,7 @@ PhishMeNot is a web-based phishing link checker. This repository currently conta
 | Database | MySQL 8                                                                      |
 | Identity | Google OAuth 2.0 / OpenID Connect, or email + password (BCrypt)              |
 | Email    | Any SMTP server (e.g. Gmail) via Spring Mail, for password reset links        |
+| Threat data | VirusTotal API v3 and Google Safe Browsing Lookup API v4 (called only by the backend) |
 
 ## Increment 1 features
 
@@ -115,6 +119,25 @@ In Increment 1 accounts were Google-only (SRS FR-020, FR-021), created automatic
 - **Without SMTP settings** (local development) the link is written to the backend log instead,
   in a line starting with `Password reset link for`.
 
+## Increment 3 features (core system)
+
+| SRS feature | What it does | Functional requirements |
+|---|---|---|
+| **1. Link Verification** | `/check`: paste a link and see a **Safe / Suspicious / Malicious** verdict with a colour, icon and label, a plain-language explanation (e.g. "7 of 90 security engines flagged this link as malicious"), and safety tips for Suspicious or Malicious links. The URL is validated and normalized (spaces trimmed, `https://` added, domain lowercased), and it is shown as text only: never opened, fetched or made clickable. | FR-001 – FR-007 |
+| **2. Multi-Source Threat Checking** | The backend checks **Google Safe Browsing** (MALWARE, SOCIAL_ENGINEERING, UNWANTED_SOFTWARE, POTENTIALLY_HARMFUL_APPLICATION) and **VirusTotal** (it reads the existing analysis, or submits the URL and polls) **in parallel**, then applies the SRS verdict rules. Complete results are reused for 24 hours. If one service fails, the other's answer is labelled a *partial check*; if both fail, the user is asked to try later. There is a limit of **20 checks per user per hour**, and API keys come only from environment variables. | FR-011 – FR-019 |
+| **3. Verification History** | `/history`: your own checks, newest first, with verdict and date, a verdict filter, URL search, paging and delete. Each user sees only their own entries. | FR-023 – FR-025 |
+| **4. Scam Link Reporting** | "Report this link" from a Suspicious/Malicious result, or the `/report` form. A category is required (Fake bank, Fake e-wallet, Fake delivery, Fake government agency, Other) and the description is optional (≤ 500 characters). New reports are **Pending**, and each user can report a link once. **My reports** shows each report's status. `/scam-links` is the **public list** (no sign-in needed): approved reports only, shown in non-clickable form (`hxxps://example[.]com`), with search, a category filter and the number of reporters per link. | FR-029 – FR-037 |
+| **5. Admin Dashboard** | `/admin/reports` (ADMIN only, 403 otherwise): pending reports with URL, category, description, reporter, date and the **latest verdict**. Admins can **Approve / Reject** pending reports, **Remove** approved ones from the public list, and **Re-check** a link now. `/admin` adds statistics: total verifications, counts per verdict and per report status, and a **chart of verifications per day for 30 days**. | FR-039 – FR-045 |
+
+Business rules enforced on the server:
+- **Report status changes:** only Pending → Approved or Rejected, and Approved → Removed; anything else returns 409.
+- **One report per user per link:** a unique key on (reporter, URL hash), which returns 409.
+- **Partial results are never cached.**
+- **Other users' history entries** return 404.
+- **Admin endpoints** need the ADMIN role (URL rule plus `@PreAuthorize`).
+
+New tables (SRS ERD): `scan_results`, `verifications`, `scam_reports`.
+
 ## Increment 1 submission checklist
 
 Status: **complete**. Git tag: `increment-1`. Every requirement below is implemented in this commit.
@@ -153,6 +176,21 @@ Status: **complete**. Git tag: `increment-1`. Every requirement below is impleme
 | Tests | `backend/src/test/java/.../PasswordAndProfileTest.java` (13 tests) + 17 from Increment 1 |
 | Completion report | `docs/Increment-2-Completion-Report.pdf` |
 
+## Increment 3 submission checklist
+
+| Requirement | Where it is implemented |
+|---|---|
+| Link verification page and result | `frontend/src/pages/CheckLinkPage.jsx`, `components/VerdictBadge.jsx` |
+| URL validation + normalization | `backend/.../verification/UrlNormalizer.java` |
+| Threat services | `backend/.../verification/SafeBrowsingClient.java`, `VirusTotalClient.java` |
+| Verdict rules, explanation, tips | `backend/.../verification/VerdictEngine.java` |
+| Caching, partial checks, hourly limit, history | `backend/.../verification/VerificationService.java`, `VerificationController.java` |
+| History page | `frontend/src/pages/HistoryPage.jsx` |
+| Reporting, my reports, public list | `backend/.../report/*`, `frontend/src/pages/ReportPage.jsx`, `PublicReportsPage.jsx` |
+| Admin review, re-check, statistics | `backend/.../admin/AdminService.java`, `AdminController.java`, `frontend/src/pages/AdminReportsPage.jsx`, `AdminDashboard.jsx`, `components/DailyChart.jsx` |
+| Tests | `UrlAndVerdictRulesTest`, `ThreatClientsTest`, `LinkCheckingAndReportingTest` (18 tests) + 30 from Increments 1–2 |
+| Completion report | `docs/Increment-3-Completion-Report.pdf` |
+
 ## API
 
 | Method | Path                               | Access        | Description                                  |
@@ -170,6 +208,16 @@ Status: **complete**. Git tag: `increment-1`. Every requirement below is impleme
 | GET    | `/api/user/dashboard`              | USER, ADMIN   | General User dashboard data                  |
 | GET    | `/api/admin/dashboard`             | ADMIN         | Account statistics + newest accounts         |
 | GET    | `/api/admin/users?query=&page=&size=` | ADMIN      | Search / page through all users              |
+| POST   | `/api/verifications`               | Signed in     | Check a link `{url}` → verdict, explanation, tips |
+| GET    | `/api/verifications?verdict=&query=&page=&size=` | Signed in | Own history (newest first)  |
+| DELETE | `/api/verifications/{id}`          | Signed in     | Delete own history entry → 204               |
+| POST   | `/api/reports`                     | Signed in     | Report a link `{url, category, description}` → 201 |
+| GET    | `/api/reports/mine`                | Signed in     | Own reports with status                      |
+| GET    | `/api/reports/public?query=&category=` | Public    | Approved reports, defanged, grouped by link  |
+| GET    | `/api/admin/reports?status=`       | ADMIN         | Reports by status with latest verdict        |
+| PATCH  | `/api/admin/reports/{id}`          | ADMIN         | `{action: APPROVE \| REJECT \| REMOVE}`       |
+| POST   | `/api/admin/reports/{id}/recheck`  | ADMIN         | Re-check the link now (bypasses the cache)   |
+| GET    | `/api/admin/statistics`            | ADMIN         | Verdict/status counts, 30-day daily counts   |
 | GET    | `/api/health`                      | Public        | Liveness check                               |
 
 ## Project structure
@@ -180,6 +228,8 @@ backend/                         Spring Boot REST API
     auth/      Google sign-in, email+password register/login, forgot/reset password, reset tokens, mailer, /api/me
     admin/     Administrator dashboard + user list (ADMIN only)
     user/      User entity, Role enum, repository, General User dashboard, profile + change password
+    verification/  URL normalizer, VirusTotal + Safe Browsing clients, verdict engine, scan results, history
+    report/    Scam reports: submit, my reports, public list
     config/    SecurityConfig (OAuth2 login, sessions, CSRF, CORS, RBAC), app properties
     common/    Error handling, health endpoint
   src/main/resources/schema-mysql.sql   One-line upgrade of the Increment 1 users table (google_id → nullable)
@@ -198,6 +248,9 @@ docs/                            Increment completion reports
 - Node.js 20+ (LTS) and npm
 - MySQL 8 (or MariaDB) running locally
 - A Google Cloud project with an OAuth 2.0 Client ID
+- A **VirusTotal** API key (free account: virustotal.com → your profile → API key)
+- A **Google Safe Browsing** API key (Google Cloud Console → APIs & Services → Library → *Safe Browsing
+  API* → Enable, then Credentials → Create credentials → API key; restrict it to the Safe Browsing API)
 
 ### 1. Create the Google OAuth client
 1. Open Google Cloud Console → **APIs & Services → OAuth consent screen**, and configure it
@@ -228,6 +281,8 @@ export GOOGLE_CLIENT_SECRET=xxxx
 export DB_USERNAME=phishmenot
 export DB_PASSWORD=change-me
 export ADMIN_EMAILS=your.admin.email@gmail.com   # optional
+export VIRUSTOTAL_API_KEY=xxxx
+export SAFE_BROWSING_API_KEY=xxxx
 ./mvnw spring-boot:run
 ```
 
@@ -239,6 +294,8 @@ $env:GOOGLE_CLIENT_SECRET="xxxx"
 $env:DB_USERNAME="phishmenot"
 $env:DB_PASSWORD="change-me"
 $env:ADMIN_EMAILS="your.admin.email@gmail.com"
+$env:VIRUSTOTAL_API_KEY="xxxx"
+$env:SAFE_BROWSING_API_KEY="xxxx"
 .\mvnw.cmd spring-boot:run
 ```
 
@@ -255,6 +312,8 @@ In IntelliJ IDEA you can put the same variables in the run configuration's *Envi
 | `ADMIN_EMAILS`         | empty                                              | Comma-separated emails that get ADMIN at sign-in |
 | `COOKIE_SECURE`        | `false`                                            | Set `true` when served over HTTPS          |
 | `PORT`                 | `8080`                                             | Backend port                               |
+| `VIRUSTOTAL_API_KEY`   | — (required for link checks)                       | VirusTotal API v3 key                      |
+| `SAFE_BROWSING_API_KEY`| — (required for link checks)                       | Google Safe Browsing API key               |
 | `SPRING_MAIL_HOST`     | — (optional)                                       | SMTP server for reset emails, e.g. `smtp.gmail.com` |
 | `SPRING_MAIL_PORT`     | —                                                  | e.g. `587`                                 |
 | `SPRING_MAIL_USERNAME` | —                                                  | SMTP login, e.g. your Gmail address        |
@@ -298,6 +357,10 @@ The tests use an in-memory H2 database in MySQL mode. They cover first-time regi
 returning users (no duplicates), duplicate-email rejection, required-field and verified-email
 validation, admin role assignment, 401 for anonymous requests, 403 for General Users on admin
 endpoints, CSRF-protected logout that ends the session, and role-based redirects after login.
+Increment 3 tests cover URL normalization and the verdict rules (`UrlAndVerdictRulesTest`), the exact
+HTTP requests to VirusTotal and Safe Browsing (`ThreatClientsTest`), and every workflow through the
+API (`LinkCheckingAndReportingTest`): verify, 24-hour cache, partial and failed checks, hourly limit,
+private history, reporting rules, public list, admin review/re-check/statistics and 401/403 checks.
 Increment 2 tests (`PasswordAndProfileTest`) cover registration (hashing, validation, duplicates, no
 admin escalation), password login, profile editing (validation, own profile only), change password
 (wrong current, mismatch, policy, old password rejected), and reset links (hashed, single-use,
@@ -322,3 +385,21 @@ replaced by newer links, expiry, no email enumeration).
 4. Sign out → **Forgot password?** → enter your email. Open the emailed link (or the link from the
    backend log), set a new password, and sign in with it. Opening the same link again shows
    "invalid, has expired, or was already used".
+
+### Increment 3 walkthrough
+1. Sign in and open **Check a Link**. Submit an empty box or `not a link` to see the validation
+   messages, then paste a real link. You get a verdict with colour, label, explanation and, for
+   Suspicious or Malicious links, safety tips. Checking the same link again shows "saved result from
+   the last 24 hours".
+2. Open **History**: filter by verdict, search by link text, and delete an entry.
+3. On a Suspicious or Malicious result click **Report this link**, choose a category and submit. **My
+   reports** shows it as Pending. Reporting the same link again is refused.
+4. Sign out and open **Scam Links** (`/scam-links`). Nothing is listed until an admin approves it.
+5. Sign in as an administrator. The **Admin Dashboard** shows verification and report statistics
+   with the 30-day chart. **Review Reports** lists the pending report with its latest verdict:
+   **Re-check link**, then **Approve** (or Reject).
+6. As a guest, **Scam Links** now shows the link as `hxxps://…[.]…` with its category and report
+   count. The reporter's **My reports** shows Approved.
+
+Test link ideas: Google's official Safe Browsing test page `http://testsafebrowsing.appspot.com/s/phishing.html`
+is reported as phishing by Safe Browsing; `https://www.google.com` comes back Safe.
